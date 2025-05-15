@@ -8,6 +8,7 @@
 
 d3.csv("./data/1980sClassics.csv", d3.autoType).then(data => {
 
+    // Creation of scales to fit the content on page and potentially style its properties
     const x = d3.scaleLinear()
         .domain(d3.extent(data, d => d.Danceability))
         .range([0, innerWidth])
@@ -18,14 +19,15 @@ d3.csv("./data/1980sClassics.csv", d3.autoType).then(data => {
         .range([0, innerHeight])
         .nice();
 
+    const color = d3.scaleSequential()
+        .domain([1989, 1980])
+        .interpolator(d3.interpolateViridis);
+
+    // Creation of base svg group
     const g = svg.append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Color scale for years between 1980 and 1989
-    const color = d3.scaleSequential()
-        .domain([1980, 1989])
-        .interpolator(d3.interpolateViridis); // or d3.interpolateBlues
-
+    // Appending the axis
     g.append("g")
     .call(d3.axisLeft(y))
     .append("text")
@@ -55,7 +57,7 @@ d3.csv("./data/1980sClassics.csv", d3.autoType).then(data => {
     .style("font-size", "12px")
     .style("pointer-events", "none");
 
-    // Circles
+    // Appending circles
     g.selectAll("circle")
     .data(data)
     .enter().append("circle")
@@ -64,22 +66,27 @@ d3.csv("./data/1980sClassics.csv", d3.autoType).then(data => {
         .attr("r", 5)
         .attr("fill", d => color(d.Year))
         .on("mouseover", (event, d) => {
-            
+            // All the interactivity on mouse over happens in here
             const hoveredYear = d.Year;
             
+            // The correct label for the year is rendered
             label
                 .text(`${d.Popularity}. ${d.Track} by ${d.Artist}`)
                 .attr("x", x(d.Danceability))
                 .attr("y", y(d.Popularity) - 10)
                 .style("visibility", "visible");
             
-                  // Highlight matching year, fade others
+            // Highlight matching year, fade others
             g.selectAll("circle")
                 .transition().duration(150)
                 .style("opacity", circleData => circleData.Year === hoveredYear ? 1 : 0.1)
                 .style("stroke", circleData => circleData.Year === hoveredYear ? "red" : "none");
+
+            // Update the div element to the current year
+            d3.select("#year-tooltip").text(hoveredYear)
         })
         .on("mouseout", (event, d) => {
+            // All the interactivity on mouse out happen in here
             label.style("visibility", "hidden");
             d3.select(event.currentTarget).attr("stroke", "none");
 
@@ -87,5 +94,7 @@ d3.csv("./data/1980sClassics.csv", d3.autoType).then(data => {
             g.selectAll("circle")
                 .transition().duration(150)
                 .style("opacity", 1);
+
+            d3.select("#year-tooltip").text("")
         });
 })
