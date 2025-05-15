@@ -1,0 +1,91 @@
+
+    const svg = d3.select("svg");
+    const width = 1280;
+    const height = 800;
+    const margin = { top: 40, right: 30, bottom: 50, left: 60 };
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+
+d3.csv("./data/1980sClassics.csv", d3.autoType).then(data => {
+
+    const x = d3.scaleLinear()
+        .domain(d3.extent(data, d => d.Danceability))
+        .range([0, innerWidth])
+        .nice();
+
+    const y = d3.scaleLinear()
+        .domain(d3.extent(data, d => d.Popularity))
+        .range([0, innerHeight])
+        .nice();
+
+    const g = svg.append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Color scale for years between 1980 and 1989
+    const color = d3.scaleSequential()
+        .domain([1980, 1989])
+        .interpolator(d3.interpolateViridis); // or d3.interpolateBlues
+
+    g.append("g")
+    .call(d3.axisLeft(y))
+    .append("text")
+        .attr("class", "axis-label")
+        .attr("x", 30)
+        .attr("y", -10)
+        .attr("fill", "black")
+        .attr("text-anchor", "end")
+        .text("Popularity");
+
+    g.append("g")
+    .attr("transform", `translate(0,${innerHeight})`)
+    .call(d3.axisBottom(x))
+    .append("text")
+        .attr("class", "axis-label")
+        .attr("x", innerWidth / 2)
+        .attr("y", 35)
+        .attr("fill", "black")
+        .text("Danceability");
+
+
+    // Tooltip-like label group
+    const label = g.append("text")
+    .attr("class", "hover-label")
+    .attr("text-anchor", "middle")
+    .style("visibility", "hidden")
+    .style("font-size", "12px")
+    .style("pointer-events", "none");
+
+    // Circles
+    g.selectAll("circle")
+    .data(data)
+    .enter().append("circle")
+        .attr("cx", d => x(d.Danceability))
+        .attr("cy", d => y(d.Popularity))
+        .attr("r", 5)
+        .attr("fill", d => color(d.Year))
+        .on("mouseover", (event, d) => {
+            
+            const hoveredYear = d.Year;
+            
+            label
+                .text(`${d.Popularity}. ${d.Track} by ${d.Artist}`)
+                .attr("x", x(d.Danceability))
+                .attr("y", y(d.Popularity) - 10)
+                .style("visibility", "visible");
+            
+                  // Highlight matching year, fade others
+            g.selectAll("circle")
+                .transition().duration(150)
+                .style("opacity", circleData => circleData.Year === hoveredYear ? 1 : 0.1)
+                .style("stroke", circleData => circleData.Year === hoveredYear ? "red" : "none");
+        })
+        .on("mouseout", (event, d) => {
+            label.style("visibility", "hidden");
+            d3.select(event.currentTarget).attr("stroke", "none");
+
+            // Restore all circle opacities
+            g.selectAll("circle")
+                .transition().duration(150)
+                .style("opacity", 1);
+        });
+})
