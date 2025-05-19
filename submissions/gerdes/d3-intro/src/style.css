@@ -1,0 +1,9 @@
+@import "tailwindcss";
+.main-container {
+	width: 1280px;
+	margin: 0 auto;
+}
+
+.label {
+	font-size: 10px;
+}
